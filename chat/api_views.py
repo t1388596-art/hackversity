@@ -46,9 +46,13 @@ class ConversationViewSet(viewsets.ModelViewSet):
             is_from_user=False
         )
         
+        # Get model info for response
+        model_info = ai_service.get_model_info()
+        
         return Response({
             'user_message': MessageSerializer(user_message).data,
             'ai_message': MessageSerializer(ai_message).data,
+            'model_info': model_info,
         })
 
 

@@ -17,6 +17,14 @@ class AIService:
         if not self.api_key:
             logger.warning("EURON_API_KEY not found in settings")
     
+    def get_model_info(self):
+        """Get current AI model information"""
+        return {
+            'name': self.model,
+            'provider': 'Hackversity.AI',
+            'status': 'active' if self.api_key else 'demo_mode'
+        }
+    
     def _make_api_request(self, messages):
         """Make a request to the Euron API"""
         if not self.api_key:

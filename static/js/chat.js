@@ -1,8 +1,44 @@
-// Chat functionality for Hackversity
+// Chat functionality for Hackversity - Mobile Optimized
 
 // Global variables
 let currentConversationId = null;
 let isLoading = false;
+
+// Mobile detection utility
+const MobileUtils = {
+    isMobile: () => window.innerWidth <= 768,
+    isTablet: () => window.innerWidth > 768 && window.innerWidth <= 1024,
+    isTouchDevice: () => 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+    
+    // Optimize for mobile performance
+    throttle: (func, delay) => {
+        let timeoutId;
+        let lastExecTime = 0;
+        return function (...args) {
+            const currentTime = Date.now();
+            
+            if (currentTime - lastExecTime > delay) {
+                func.apply(this, args);
+                lastExecTime = currentTime;
+            } else {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    func.apply(this, args);
+                    lastExecTime = Date.now();
+                }, delay - (currentTime - lastExecTime));
+            }
+        };
+    },
+    
+    // Debounce for input events
+    debounce: (func, delay) => {
+        let timeoutId;
+        return function (...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+};
 
 // Typing Effect Class
 class TypingEffect {
@@ -77,18 +113,48 @@ function initializeChat() {
     }
 
     if (messageInput) {
+        // Enhanced keyboard handling for mobile
         messageInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(e);
+            if (e.key === 'Enter') {
+                if (MobileUtils.isMobile() || !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                }
             }
         });
 
-        // Auto-resize textarea
-        messageInput.addEventListener('input', function() {
+        // Auto-resize textarea with mobile optimization
+        const autoResize = MobileUtils.throttle(function() {
             this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
+            const newHeight = Math.min(this.scrollHeight, MobileUtils.isMobile() ? 100 : 120);
+            this.style.height = newHeight + 'px';
+            
+            // Scroll into view on mobile when typing
+            if (MobileUtils.isMobile()) {
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        }, 100);
+        
+        messageInput.addEventListener('input', autoResize);
+        
+        // Mobile-specific touch handling
+        if (MobileUtils.isTouchDevice()) {
+            messageInput.addEventListener('focus', function() {
+                // Add mobile-focused class for styling
+                document.body.classList.add('input-focused');
+                
+                // Ensure input is visible above keyboard
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            });
+            
+            messageInput.addEventListener('blur', function() {
+                document.body.classList.remove('input-focused');
+            });
+        }
     }
 
     // Scroll to bottom of messages
@@ -262,7 +328,15 @@ function setLoading(loading) {
 function scrollToBottom() {
     const messagesContainer = document.getElementById('messagesContainer');
     if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        // Use smooth scrolling on mobile for better UX
+        if (MobileUtils.isMobile()) {
+            messagesContainer.scrollTo({
+                top: messagesContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        } else {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
     }
 }
 

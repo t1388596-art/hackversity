@@ -51,6 +51,14 @@
                 // Add touch feedback
                 link.addEventListener('touchstart', function() {
                     this.style.transform = 'scale(0.95)';
+                }, { passive: true });
+                
+                link.addEventListener('touchend', function() {
+                    this.style.transform = '';
+                }, { passive: true });
+                // Add touch feedback
+                link.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.95)';
                 });
                 
                 link.addEventListener('touchend', function() {
@@ -89,6 +97,26 @@
             if (ResponsiveUtils.isTouchDevice()) {
                 document.body.style.webkitOverflowScrolling = 'touch';
                 
+                // Enhanced smooth scrolling for mobile
+                const smoothScrollElements = document.querySelectorAll('a[href^="#"], .scroll-to');
+                smoothScrollElements.forEach(element => {
+                    element.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const targetId = this.getAttribute('href');
+                        const target = document.querySelector(targetId);
+                        
+                        if (target) {
+                            const offset = ResponsiveUtils.isMobile() ? 100 : 80;
+                            const targetPosition = target.offsetTop - offset;
+                            
+                            window.scrollTo({
+                                top: targetPosition,
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
+                });
+                
                 // Prevent scroll bouncing on iOS
                 document.addEventListener('touchmove', function(e) {
                     if (e.target.closest('.messages-container') || 
@@ -117,6 +145,21 @@
         optimizeMessageDisplay: function() {
             const messagesContainer = document.querySelector('.messages-container');
             if (!messagesContainer) return;
+            
+            // Auto-scroll to bottom for new messages
+            const scrollToBottom = () => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            };
+            
+            // Observe new messages
+            const observer = new MutationObserver(() => {
+                setTimeout(scrollToBottom, 100);
+            });
+            
+            observer.observe(messagesContainer, {
+                childList: true,
+                subtree: true
+            });
             
             // Optimize scrolling performance
             let scrollTimeout;

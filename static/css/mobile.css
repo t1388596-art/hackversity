@@ -1,0 +1,252 @@
+/* Mobile-Specific Enhancements for Hackversity */
+
+/* Advanced Mobile Optimizations */
+@media screen and (max-width: 768px) {
+    /* Enhanced touch targets */
+    .btn, button, a, input, select, textarea {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Prevent zoom on input focus */
+    input, select, textarea {
+        font-size: 16px;
+    }
+    
+    /* Improved tap highlighting */
+    * {
+        -webkit-tap-highlight-color: rgba(221, 3, 3, 0.2);
+    }
+    
+    /* Safe area handling for notched devices */
+    .nav {
+        padding-top: env(safe-area-inset-top);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+    
+    .input-area {
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+        padding-left: calc(1rem + env(safe-area-inset-left));
+        padding-right: calc(1rem + env(safe-area-inset-right));
+    }
+    
+    /* Enhanced scrolling */
+    .messages-container, .conversation-list {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        overscroll-behavior: contain;
+    }
+    
+    /* Improved animations for mobile */
+    .message {
+        animation: slideInUp 0.3s ease-out;
+    }
+    
+    .conversation-item {
+        transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+    
+    .conversation-item:active {
+        transform: scale(0.98);
+        background-color: rgba(221, 3, 3, 0.1);
+    }
+    
+    /* Enhanced sidebar for mobile */
+    .sidebar {
+        box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
+        will-change: transform;
+    }
+    
+    .sidebar.sidebar-open {
+        animation: slideInLeft 0.3s ease-out;
+    }
+    
+    /* Mobile-optimized search */
+    .search-input-wrapper {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        border-radius: 16px;
+    }
+    
+    .search-input {
+        padding: 1rem 1.5rem;
+        font-size: 16px;
+        border-radius: 16px;
+    }
+    
+    .search-submit {
+        padding: 1rem 2rem;
+        min-height: 50px;
+        border-radius: 0 16px 16px 0;
+    }
+    
+    /* Mobile hero section adjustments */
+    .hero-section {
+        padding: 2rem 1rem;
+        text-align: center;
+    }
+    
+    .hero-title {
+        font-size: clamp(2rem, 8vw, 3rem);
+        margin-bottom: 1.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: clamp(1rem, 4vw, 1.2rem);
+        margin-bottom: 2.5rem;
+        line-height: 1.6;
+    }
+    
+    /* Improved form styles */
+    .form-control {
+        padding: 1rem;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(221, 3, 3, 0.2);
+    }
+    
+    /* Enhanced buttons */
+    .btn-primary, .btn-secondary {
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-primary:active, .btn-secondary:active {
+        transform: scale(0.98);
+    }
+    
+    /* Mobile navigation improvements */
+    .nav-links.nav-open {
+        animation: slideInRight 0.3s ease-out;
+    }
+    
+    .nav-toggle.active {
+        transform: rotate(180deg);
+    }
+    
+    /* Loading states for mobile */
+    .loading {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+    
+    .loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid #DD0303;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+    }
+}
+
+/* Landscape mobile optimizations */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+    .hero-section {
+        padding: 1rem;
+    }
+    
+    .chat-container {
+        height: calc(100vh - 60px);
+    }
+    
+    .nav {
+        padding: 0.5rem 0;
+    }
+    
+    .sidebar {
+        top: 60px;
+        height: calc(100vh - 60px);
+    }
+    
+    .sidebar-toggle {
+        top: 70px;
+    }
+}
+
+/* Animations */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .nav {
+        border-bottom: 2px solid #DD0303;
+    }
+    
+    .btn, button {
+        border: 2px solid currentColor;
+    }
+    
+    .form-control {
+        border: 2px solid #DD0303;
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Dark mode enhancements for mobile */
+@media (prefers-color-scheme: dark) {
+    .search-input, .form-control {
+        background: rgba(0, 0, 0, 0.3);
+        color: #f1f5f9;
+    }
+    
+    .sidebar {
+        background: rgba(0, 0, 0, 0.95);
+    }
+}

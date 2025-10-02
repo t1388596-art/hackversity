@@ -43,9 +43,14 @@
 {% else %}
     <!-- Chat Interface -->
     <div class="chat-container">
+        <!-- Mobile sidebar toggle -->
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        
         <div class="row g-0 h-100">
             <!-- Sidebar -->
-            <div class="col-md-3 sidebar">
+            <div class="col-md-3 sidebar" id="chatSidebar">
                 <div class="sidebar-header">
                     <button class="new-chat-btn" onclick="startNewConversation()">
                         <i class="fas fa-plus"></i>
@@ -80,6 +85,23 @@
             
             <!-- Chat Area -->
             <div class="col-md-9 d-flex flex-column chat-area">
+                <!-- AI Model Info Header -->
+                <div class="ai-model-info">
+                    <div class="model-info-content">
+                        <div class="model-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="model-details">
+                            <span class="model-name">{{ model_info.name }}</span>
+                            <span class="model-provider">via {{ model_info.provider }}</span>
+                        </div>
+                        <div class="model-status">
+                            <div class="status-indicator status-{{ model_info.status }}"></div>
+                            <span class="status-text">{{ model_info.status|title }}</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Messages -->
                 <div class="messages-container flex-grow-1" id="messagesContainer">
                     {% if messages %}
@@ -379,6 +401,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     handleSearch();
+                }
+            });
+        }
+        
+        // Mobile sidebar toggle functionality
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const chatSidebar = document.getElementById('chatSidebar');
+        
+        if (sidebarToggle && chatSidebar) {
+            sidebarToggle.addEventListener('click', function() {
+                chatSidebar.classList.toggle('sidebar-open');
+                sidebarToggle.classList.toggle('active');
+                document.body.classList.toggle('sidebar-open');
+            });
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768 && 
+                    !e.target.closest('.sidebar') && 
+                    !e.target.closest('.sidebar-toggle') &&
+                    chatSidebar.classList.contains('sidebar-open')) {
+                    chatSidebar.classList.remove('sidebar-open');
+                    sidebarToggle.classList.remove('active');
+                    document.body.classList.remove('sidebar-open');
                 }
             });
         }

@@ -36,11 +36,16 @@ def home(request):
             # For new users with no conversations, force_chat=1 will still show chat interface
             # but with no active_conversation, which will show the welcome message in chat layout
         
+        # Get AI model information
+        ai_service = AIService()
+        model_info = ai_service.get_model_info()
+        
         context = {
             'conversations': conversations,
             'active_conversation': active_conversation,
             'messages': active_conversation.messages.all() if active_conversation else [],
             'force_chat': force_chat,  # Pass this to template for logic
+            'model_info': model_info,  # Add model info for display
         }
         
         # Always render the main template - no fallback that causes loading screen
@@ -49,12 +54,20 @@ def home(request):
     except Exception as e:
         # Even with errors, render main template with error context
         print(f"Chat view error: {e}")  # Log for debugging
+        # Even with errors, try to get model info
+        try:
+            ai_service = AIService()
+            model_info = ai_service.get_model_info()
+        except:
+            model_info = {'name': 'Unknown', 'provider': 'N/A', 'status': 'error'}
+        
         context = {
             'conversations': [],
             'active_conversation': None,
             'messages': [],
             'force_chat': False,
-            'error_message': str(e)
+            'error_message': str(e),
+            'model_info': model_info,
         }
         return render(request, 'chat/home.html', context)
 
