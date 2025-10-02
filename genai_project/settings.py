@@ -300,8 +300,20 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# WhiteNoise configuration for serving static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Production-safe WhiteNoise configuration for serving static files
+# Use CompressedStaticFilesStorage instead of CompressedManifestStaticFilesStorage
+# to avoid errors with missing files like favicon.ico
+if not DEBUG:
+    # Production: Use WhiteNoise with compression but without strict manifest
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+else:
+    # Development: Use default Django static files storage
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+# WhiteNoise configuration for production
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True
+WHITENOISE_MAX_AGE = 31536000  # 1 year cache for static files
 
 # Media files
 MEDIA_URL = '/media/'
