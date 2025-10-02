@@ -28,6 +28,10 @@
                     class="search-input" 
                     placeholder="Ask about cybersecurity, ethical hacking, or bug bounty..." 
                     id="searchInput"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
                 />
                 <button class="search-submit" type="submit" id="searchSubmit">
                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
@@ -44,8 +48,8 @@
     <!-- Chat Interface -->
     <div class="chat-container">
         <!-- Mobile sidebar toggle -->
-        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
-            <i class="fas fa-bars"></i>
+        <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" aria-label="Toggle conversations">
+            <i class="fas fa-comments"></i>
         </button>
         
         <div class="row g-0 h-100">
@@ -141,7 +145,11 @@
                                id="messageInput" 
                                placeholder="Ask about cybersecurity, ethical hacking, or AI security..."
                                autocomplete="off"
-                               rows="1"></textarea>
+                               autocorrect="off"
+                               autocapitalize="off" 
+                               spellcheck="true"
+                               rows="1"
+                               style="font-size: 16px;"></textarea>
                             <button type="submit" id="sendButton">
                                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -401,30 +409,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     handleSearch();
-                }
-            });
-        }
-        
-        // Mobile sidebar toggle functionality
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const chatSidebar = document.getElementById('chatSidebar');
-        
-        if (sidebarToggle && chatSidebar) {
-            sidebarToggle.addEventListener('click', function() {
-                chatSidebar.classList.toggle('sidebar-open');
-                sidebarToggle.classList.toggle('active');
-                document.body.classList.toggle('sidebar-open');
-            });
-            
-            // Close sidebar when clicking outside on mobile
-            document.addEventListener('click', function(e) {
-                if (window.innerWidth <= 768 && 
-                    !e.target.closest('.sidebar') && 
-                    !e.target.closest('.sidebar-toggle') &&
-                    chatSidebar.classList.contains('sidebar-open')) {
-                    chatSidebar.classList.remove('sidebar-open');
-                    sidebarToggle.classList.remove('active');
-                    document.body.classList.remove('sidebar-open');
                 }
             });
         }
