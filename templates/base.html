@@ -51,8 +51,9 @@
             
             <ul class="nav-links" id="navLinks">
                 {% if user.is_authenticated %}
-                    <li><a href="/chat/">Home</a></li>
+                    <li><a href="/">Home</a></li>
                     <li><a href="/chat/?force_chat=1">Chat</a></li>
+                    <li><a href="/learning/">Learning</a></li>
                     <li><a href="/accounts/profile/">Profile</a></li>
                     <li class="user-avatar-container">
                         <div class="user-avatar">
@@ -66,7 +67,8 @@
                     </li>
                     <li><a href="/accounts/logout/">Logout</a></li>
                 {% else %}
-                    <li><a href="/chat/">Home</a></li>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/learning/">Learning</a></li>
                     <li><a href="#features">Features</a></li>
                     <li><a href="/accounts/login/">Login</a></li>
                     <li><a href="/accounts/signup/">Sign Up</a></li>

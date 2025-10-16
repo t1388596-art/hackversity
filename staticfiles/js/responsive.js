@@ -39,9 +39,59 @@
     // Mobile Navigation Enhancement
     const MobileNav = {
         init: function() {
+            this.setupHamburgerMenu();
             this.setupTouchInteractions();
             this.handleNavOverflow();
             this.improveScrolling();
+        },
+        
+        setupHamburgerMenu: function() {
+            const navToggle = document.getElementById('navToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (navToggle && navLinks) {
+                navToggle.addEventListener('click', function() {
+                    navToggle.classList.toggle('active');
+                    navLinks.classList.toggle('active');
+                    
+                    // Prevent body scroll when menu is open
+                    if (navLinks.classList.contains('active')) {
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        document.body.style.overflow = '';
+                    }
+                });
+                
+                // Close menu when clicking nav links (on mobile)
+                const navLinkItems = navLinks.querySelectorAll('a');
+                navLinkItems.forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth <= 768) {
+                            navToggle.classList.remove('active');
+                            navLinks.classList.remove('active');
+                            document.body.style.overflow = '';
+                        }
+                    });
+                });
+                
+                // Close menu on window resize to desktop
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth > 768) {
+                        navToggle.classList.remove('active');
+                        navLinks.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                });
+                
+                // Close menu on escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+                        navToggle.classList.remove('active');
+                        navLinks.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
         },
         
         setupTouchInteractions: function() {
@@ -311,10 +361,107 @@
         }
     };
     
+    // Chat Mobile Enhancements
+    const ChatMobile = {
+        init: function() {
+            this.setupMobileSidebar();
+            this.handleKeyboard();
+            this.optimizeTouch();
+        },
+        
+        setupMobileSidebar: function() {
+            const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+            const chatSidebar = document.getElementById('chatSidebar');
+            
+            if (mobileSidebarToggle && chatSidebar) {
+                mobileSidebarToggle.addEventListener('click', function() {
+                    chatSidebar.classList.toggle('active');
+                    
+                    // Update icon based on state
+                    const icon = mobileSidebarToggle.querySelector('i');
+                    if (chatSidebar.classList.contains('active')) {
+                        icon.className = 'fas fa-times';
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        icon.className = 'fas fa-comments';
+                        document.body.style.overflow = '';
+                    }
+                });
+                
+                // Close sidebar when clicking on conversation items
+                const conversationItems = chatSidebar.querySelectorAll('.conversation-item');
+                conversationItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        if (window.innerWidth <= 768) {
+                            chatSidebar.classList.remove('active');
+                            const icon = mobileSidebarToggle.querySelector('i');
+                            icon.className = 'fas fa-comments';
+                            document.body.style.overflow = '';
+                        }
+                    });
+                });
+                
+                // Close sidebar on window resize
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth > 768) {
+                        chatSidebar.classList.remove('active');
+                        const icon = mobileSidebarToggle.querySelector('i');
+                        icon.className = 'fas fa-comments';
+                        document.body.style.overflow = '';
+                    }
+                });
+                
+                // Close sidebar on escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && chatSidebar.classList.contains('active')) {
+                        chatSidebar.classList.remove('active');
+                        const icon = mobileSidebarToggle.querySelector('i');
+                        icon.className = 'fas fa-comments';
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
+        },
+        
+        handleKeyboard: function() {
+            // Handle virtual keyboard on mobile
+            if (!ResponsiveUtils.isTouchDevice()) return;
+            
+            const messageInput = document.getElementById('messageInput');
+            if (!messageInput) return;
+            
+            messageInput.addEventListener('focus', function() {
+                if (ResponsiveUtils.isMobile()) {
+                    // Scroll input into view on focus
+                    setTimeout(() => {
+                        messageInput.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center' 
+                        });
+                    }, 300);
+                }
+            });
+        },
+        
+        optimizeTouch: function() {
+            // Optimize touch interactions for chat elements
+            const messageElements = document.querySelectorAll('.message');
+            messageElements.forEach(message => {
+                message.style.webkitTapHighlightColor = 'rgba(221, 3, 3, 0.1)';
+            });
+            
+            const buttons = document.querySelectorAll('.btn, button');
+            buttons.forEach(button => {
+                button.style.webkitTapHighlightColor = 'rgba(221, 3, 3, 0.2)';
+            });
+        }
+    };
+    
     // Initialize everything when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         ResponsiveUtils.updateViewportClass();
         MobileNav.init();
+        ChatMobile.init();
         ChatEnhancements.init();
         FormEnhancements.init();
         PerformanceOptimizations.init();

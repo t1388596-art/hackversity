@@ -5,16 +5,91 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 from django.contrib import messages
-from .models import Conversation, Message
+from django.core.cache import cache
+from django.db.models import Prefetch, Count
+from django.views.decorators.cache import cache_page
+from django.core.paginator import Paginator
+from .models import Conversation, Message, ConversationStats, LearningModule, LearningVideo
 from .services import AIService
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def landing_page(request):
+    """Landing page view that shows the landing page"""
+    context = {
+        'show_landing': True
+    }
+    return render(request, 'chat/home.html', context)
+
+
+def learning_home(request):
+    """Learning page with modules from database"""
+    modules = LearningModule.objects.filter(is_active=True).prefetch_related('videos')
+    context = {
+        'modules': modules
+    }
+    return render(request, 'learning/home.html', context)
+
+
+def python_tutorial(request):
+    """Python tutorial page with structured learning modules"""
+    return render(request, 'learning/python_tutorial.html')
+
+
+def module_detail(request, slug):
+    """Generic module detail view using database data"""
+    module = get_object_or_404(LearningModule, slug=slug, is_active=True)
+    videos = module.videos.filter(is_active=True).order_by('order')
+    
+    context = {
+        'module': module,
+        'module_title': module.title,
+        'module_description': module.description,
+        'module_icon': module.icon,
+        'videos': videos
+    }
+    return render(request, 'learning/module_detail.html', context)
+
+
+def getting_started_module(request):
+    """Getting Started cybersecurity module - backwards compatibility"""
+    return module_detail(request, 'getting-started')
+
+
+def network_security_module(request):
+    """Network Security module - backwards compatibility"""
+    return module_detail(request, 'network-security')
+
+
+def web_security_module(request):
+    """Web Application Security module - backwards compatibility"""
+    return module_detail(request, 'web-security')
+
+
+def bug_bounty_module(request):
+    """Bug Bounty Hunting module - backwards compatibility"""
+    return module_detail(request, 'bug-bounty')
+
+
+def digital_forensics_module(request):
+    """Digital Forensics module - backwards compatibility"""
+    return module_detail(request, 'digital-forensics')
+
+
+def advanced_security_module(request):
+    """Advanced Security module - backwards compatibility"""
+    return module_detail(request, 'advanced-security')
 
 
 @login_required
 def home(request):
-    """Production-safe main chat interface with robust error handling"""
+    """Production-safe main chat interface with robust error handling and performance optimizations"""
     try:
-        conversations = Conversation.objects.filter(user=request.user).order_by('-updated_at')[:10]
+        # Use cached conversations for better performance
+        conversations = Conversation.get_user_conversations_cached(request.user, limit=10)
         
         # Check if a specific conversation is requested
         conversation_id = request.GET.get('conversation')
@@ -22,8 +97,12 @@ def home(request):
         
         if conversation_id:
             try:
-                active_conversation = Conversation.objects.get(id=conversation_id, user=request.user)
-            except Conversation.DoesNotExist:
+                # Use select_related to avoid N+1 queries
+                active_conversation = Conversation.objects.select_related('user').get(
+                    id=conversation_id, user=request.user
+                )
+            except (Conversation.DoesNotExist, ValueError):
+                logger.warning(f"Invalid conversation ID requested: {conversation_id} by user {request.user.id}")
                 pass
         
         # Check if chat interface is forced (from Chat nav link)
@@ -31,13 +110,23 @@ def home(request):
         
         # If forcing chat interface but no specific conversation, use the most recent one or create new one
         if force_chat and not active_conversation:
-            if conversations.exists():
-                active_conversation = conversations.first()
+            if conversations:
+                active_conversation = conversations[0]
             # For new users with no conversations, force_chat=1 will still show chat interface
             # but with no active_conversation, which will show the welcome message in chat layout
         
-        # Get AI model information
-        ai_service = AIService()
+        # Get AI model information (cached)
+        cache_key = f'ai_model_info_{request.user.id}'
+        model_info = cache.get(cache_key)
+        
+        if model_info is None:
+            ai_service = AIService()
+            try:
+                model_info = ai_service.get_model_info()
+                cache.set(cache_key, model_info, timeout=3600)  # Cache for 1 hour
+            except Exception as e:
+                logger.error(f"Failed to get AI model info: {e}")
+                model_info = {"model": "Unknown", "status": "Error"}
         model_info = ai_service.get_model_info()
         
         context = {

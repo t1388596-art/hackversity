@@ -19,6 +19,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
 from chat.emergency_views import health_check, simple_home, database_status, emergency_login
+from chat.views import landing_page
 
 # Import production-safe views
 try:
@@ -44,8 +45,11 @@ urlpatterns = [
     path('chat/', include('chat.urls')),
     path('api/', include('chat.api_urls')),
     
-    # Default redirect to chat interface
-    path('', RedirectView.as_view(url='/chat/', permanent=False), name='home'),
+    # Learning page redirect
+    path('learning/', RedirectView.as_view(url='/chat/learning/', permanent=False), name='learning_redirect'),
+    
+    # Landing page as home
+    path('', landing_page, name='home'),
 ]
 
 if settings.DEBUG:

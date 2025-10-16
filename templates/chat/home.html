@@ -6,7 +6,7 @@
 
 
 {% block content %}
-{% if not active_conversation and not force_chat %}
+{% if request.GET.show_landing or show_landing %}
     <!-- Landing Page - Exact Hackversity Main Page -->
     <div class="hero-section">
         <h1 class="hero-title typing-effect" id="typingTitle">
@@ -413,43 +413,96 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Ensure chat form works
+        // Debug chat functionality
+        console.log('🔍 Checking chat functionality...');
+        console.log('📝 Chat form exists:', !!document.getElementById('chatForm'));
+        console.log('📝 Message input exists:', !!document.getElementById('messageInput'));
+        console.log('📝 Messages container exists:', !!document.getElementById('messagesContainer'));
+        console.log('📝 sendMessage function exists:', typeof window.sendMessage !== 'undefined');
+        console.log('📝 handleSubmit function exists:', typeof window.handleSubmit !== 'undefined');
+        
+        // Ensure chat functionality is working
         const chatForm = document.getElementById('chatForm');
         const messageInput = document.getElementById('messageInput');
         
-        if (chatForm && messageInput && typeof window.sendMessage === 'undefined') {
-            console.warn('⚠️  Chat form fallback activated...');
-            
-            chatForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const message = messageInput.value.trim();
-                if (message) {
-                    console.log('📤 Sending message (fallback):', message);
-                    // Simple form submission fallback
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '/chat/api/send-message/';
-                    
-                    const messageField = document.createElement('input');
-                    messageField.type = 'hidden';
-                    messageField.name = 'message';
-                    messageField.value = message;
-                    
-                    const csrfField = document.createElement('input');
-                    csrfField.type = 'hidden';
-                    csrfField.name = 'csrfmiddlewaretoken';
-                    csrfField.value = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
-                    
-                    form.appendChild(messageField);
-                    form.appendChild(csrfField);
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            });
+        if (chatForm && messageInput) {
+            if (typeof window.sendMessage === 'undefined') {
+                console.warn('⚠️  Main chat functions not loaded, using fallback...');
+                
+                chatForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const message = messageInput.value.trim();
+                    if (message) {
+                        console.log('📤 Sending message (fallback):', message);
+                        // Use AJAX instead of form submission
+                        fetch('/chat/send/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                message: message,
+                                conversation_id: null
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Clear input
+                                messageInput.value = '';
+                                
+                                // Add messages to chat
+                                const messagesContainer = document.getElementById('messagesContainer');
+                                if (messagesContainer) {
+                                    // Add user message
+                                    const userMsg = document.createElement('div');
+                                    userMsg.className = 'message user';
+                                    userMsg.innerHTML = `
+                                        <div class="message-avatar"><i class="fas fa-user-ninja"></i></div>
+                                        <div class="message-content">
+                                            <div class="message-text">${message}</div>
+                                            <div class="message-time">${new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</div>
+                                        </div>
+                                    `;
+                                    messagesContainer.appendChild(userMsg);
+                                    
+                                    // Add AI response
+                                    const aiMsg = document.createElement('div');
+                                    aiMsg.className = 'message ai';
+                                    aiMsg.innerHTML = `
+                                        <div class="message-avatar"><i class="fas fa-shield-alt"></i></div>
+                                        <div class="message-content">
+                                            <div class="message-text">${data.ai_message.content}</div>
+                                            <div class="message-time">${new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</div>
+                                        </div>
+                                    `;
+                                    messagesContainer.appendChild(aiMsg);
+                                    
+                                    // Scroll to bottom
+                                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                                }
+                            } else {
+                                console.error('Failed to send message:', data.error);
+                                alert('Failed to send message: ' + data.error);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to send message. Please try again.');
+                        });
+                    }
+                });
+            } else {
+                console.log('✅ Main chat functionality is loaded');
+            }
         }
         
         console.log('✅ Production-safe chat functionality initialized');
-    }, 1000); // Give time for main scripts to load
+    }, 2000); // Give more time for main scripts to load
 });
 </script>
+
+<!-- Load chat functionality -->
+<script src="{% static 'js/chat.js' %}"></script>
 {% endblock %}

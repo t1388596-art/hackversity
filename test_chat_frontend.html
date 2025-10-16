@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Frontend Test</title>
+    <script>
+        async function testChatVisibility() {
+            console.log('🧪 Testing Chat Frontend Visibility');
+            
+            // Test if we can access the chat page
+            try {
+                const response = await fetch('http://127.0.0.1:8000/chat/');
+                console.log('✅ Chat page response status:', response.status);
+                
+                if (response.status === 200) {
+                    const html = await response.text();
+                    
+                    // Check for key elements
+                    const hasMessagesContainer = html.includes('id="messagesContainer"');
+                    const hasChatForm = html.includes('id="chatForm"');
+                    const hasMessageInput = html.includes('id="messageInput"');
+                    const hasChatJS = html.includes('chat.js');
+                    
+                    console.log('📝 Messages container:', hasMessagesContainer ? '✅' : '❌');
+                    console.log('📝 Chat form:', hasChatForm ? '✅' : '❌');
+                    console.log('📝 Message input:', hasMessageInput ? '✅' : '❌');
+                    console.log('📝 Chat.js loaded:', hasChatJS ? '✅' : '❌');
+                    
+                    if (hasMessagesContainer && hasChatForm && hasMessageInput && hasChatJS) {
+                        console.log('🎉 All chat frontend elements are present!');
+                        return true;
+                    } else {
+                        console.log('❌ Some chat elements are missing');
+                        return false;
+                    }
+                } else {
+                    console.log('❌ Chat page not accessible');
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Error testing chat frontend:', error);
+                return false;
+            }
+        }
+        
+        // Run test when page loads
+        window.onload = () => {
+            testChatVisibility().then(success => {
+                document.getElementById('result').innerHTML = success ? 
+                    '<h2 style="color: green;">✅ Chat Frontend is Ready!</h2>' :
+                    '<h2 style="color: red;">❌ Chat Frontend has Issues</h2>';
+            });
+        };
+    </script>
+</head>
+<body>
+    <h1>Chat Frontend Test</h1>
+    <p>Testing if chat messages will be visible in the frontend...</p>
+    <div id="result">Testing...</div>
+    
+    <h3>Manual Test Steps:</h3>
+    <ol>
+        <li>Open <a href="http://127.0.0.1:8000/chat/" target="_blank">http://127.0.0.1:8000/chat/</a></li>
+        <li>Log in with: kashman / (your password)</li>
+        <li>Try sending a message like "Hello!"</li>
+        <li>Check if both your message and AI response appear in the chat</li>
+    </ol>
+</body>
+</html>
