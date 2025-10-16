@@ -79,6 +79,14 @@ except Exception as e:
     print(f'⚠️  Could not create superuser: {e}')
 EOF
 
+# Create initial learning data
+echo "📚 Creating initial learning data..."
+if python manage.py create_learning_data; then
+    echo "✅ Learning data created successfully"
+else
+    echo "⚠️  Could not create learning data - continuing anyway"
+fi
+
 echo "✅ Startup completed!"
 
 # Start the main application

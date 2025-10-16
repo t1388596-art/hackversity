@@ -186,13 +186,35 @@ if DATABASE_URL and dj_database_url:
                 else:
                     print("✅ Already using internal Render URL format")
         
+        # Clean the DATABASE_URL by removing invalid connection parameters
+        # Render includes parameters like MAX_CONNS that aren't valid for psycopg2
+        cleaned_database_url = internal_database_url
+        if '?' in cleaned_database_url:
+            base_url, params = cleaned_database_url.split('?', 1)
+            # Remove invalid parameters
+            valid_params = []
+            for param in params.split('&'):
+                if '=' in param:
+                    key, value = param.split('=', 1)
+                    # Only keep valid PostgreSQL connection parameters
+                    if key.lower() not in ['max_conns', 'max_connections']:
+                        valid_params.append(param)
+            
+            if valid_params:
+                cleaned_database_url = f"{base_url}?{'&'.join(valid_params)}"
+            else:
+                cleaned_database_url = base_url
+            
+            if cleaned_database_url != internal_database_url:
+                print("🧹 Cleaned invalid connection parameters from DATABASE_URL")
+        
         # Show URL format (without sensitive data) for debugging
-        url_parts = internal_database_url.split('@')
+        url_parts = cleaned_database_url.split('@')
         if len(url_parts) > 1:
             host_part = url_parts[1]  # Everything after @
             print(f"Database URL host part: {host_part}")
         
-        db_config = dj_database_url.parse(internal_database_url)
+        db_config = dj_database_url.parse(cleaned_database_url)
         print(f"Parsed database config - Engine: {db_config.get('ENGINE', 'Unknown')}")
         print(f"Host: {db_config.get('HOST', 'Not set')}")
         print(f"Port: {db_config.get('PORT', 'Not set')} (will default to 5432 if missing)")
