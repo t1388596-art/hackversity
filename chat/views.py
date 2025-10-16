@@ -44,12 +44,16 @@ def module_detail(request, slug):
     module = get_object_or_404(LearningModule, slug=slug, is_active=True)
     videos = module.videos.filter(is_active=True).order_by('order')
     
+    # Create video titles JSON for JavaScript
+    video_titles = {video.youtube_id: video.title for video in videos}
+    
     context = {
         'module': module,
         'module_title': module.title,
         'module_description': module.description,
         'module_icon': module.icon,
-        'videos': videos
+        'videos': videos,
+        'video_titles_json': json.dumps(video_titles)
     }
     return render(request, 'learning/module_detail.html', context)
 
