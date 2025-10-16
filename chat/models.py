@@ -242,3 +242,122 @@ class LearningVideo(models.Model):
     @property
     def embed_url(self):
         return f"https://www.youtube.com/embed/{self.youtube_id}"
+
+
+class PracticeLab(models.Model):
+    """Model to store practice labs for hands-on learning"""
+    DIFFICULTY_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+        ('expert', 'Expert'),
+    ]
+    
+    LAB_TYPE_CHOICES = [
+        ('interactive', 'Interactive Exercise'),
+        ('ctf', 'Capture The Flag'),
+        ('scenario', 'Real-world Scenario'),
+        ('quiz', 'Knowledge Quiz'),
+        ('coding', 'Coding Challenge'),
+        ('network', 'Network Lab'),
+        ('webapp', 'Web Application Lab'),
+    ]
+    
+    module = models.ForeignKey(LearningModule, on_delete=models.CASCADE, related_name='practice_labs')
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200)
+    description = models.TextField(help_text="Brief description of the lab")
+    objectives = models.TextField(help_text="Learning objectives (one per line)")
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='beginner')
+    lab_type = models.CharField(max_length=20, choices=LAB_TYPE_CHOICES, default='interactive')
+    
+    # Lab content
+    instructions = models.TextField(help_text="Step-by-step lab instructions")
+    hints = models.TextField(blank=True, help_text="Hints for students (optional)")
+    solution = models.TextField(blank=True, help_text="Lab solution/walkthrough (optional)")
+    
+    # External resources
+    external_url = models.URLField(blank=True, help_text="External lab URL (e.g., TryHackMe, HackTheBox)")
+    tools_required = models.TextField(blank=True, help_text="Required tools (one per line)")
+    
+    # Metadata
+    estimated_time_minutes = models.PositiveIntegerField(default=30, help_text="Estimated completion time")
+    points = models.PositiveIntegerField(default=10, help_text="Points awarded for completion")
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    is_premium = models.BooleanField(default=False, help_text="Requires premium access")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['module', 'order', 'title']
+        unique_together = ['module', 'slug']
+        indexes = [
+            models.Index(fields=['module', 'is_active']),
+            models.Index(fields=['difficulty']),
+            models.Index(fields=['lab_type']),
+        ]
+    
+    def __str__(self):
+        return f"{self.module.title} - {self.title}"
+    
+    @property
+    def difficulty_badge_color(self):
+        """Return color class for difficulty badge"""
+        colors = {
+            'beginner': 'success',
+            'intermediate': 'warning',
+            'advanced': 'danger',
+            'expert': 'dark',
+        }
+        return colors.get(self.difficulty, 'secondary')
+    
+    @property
+    def objectives_list(self):
+        """Return objectives as a list"""
+        return [obj.strip() for obj in self.objectives.split('\n') if obj.strip()]
+    
+    @property
+    def tools_list(self):
+        """Return tools as a list"""
+        return [tool.strip() for tool in self.tools_required.split('\n') if tool.strip()]
+
+
+class LabCompletion(models.Model):
+    """Track user progress on practice labs"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lab_completions')
+    lab = models.ForeignKey(PracticeLab, on_delete=models.CASCADE, related_name='completions')
+    
+    # Progress tracking
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
+    
+    # Submission
+    submission_notes = models.TextField(blank=True, help_text="User's notes or solution")
+    flag_submitted = models.CharField(max_length=200, blank=True, help_text="CTF flag if applicable")
+    
+    # Scoring
+    score = models.PositiveIntegerField(default=0, help_text="Score earned (0-100)")
+    attempts = models.PositiveIntegerField(default=0)
+    hints_used = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        ordering = ['-started_at']
+        unique_together = ['user', 'lab']
+        indexes = [
+            models.Index(fields=['user', 'is_completed']),
+            models.Index(fields=['lab', 'is_completed']),
+        ]
+    
+    def __str__(self):
+        status = "✅" if self.is_completed else "🔄"
+        return f"{status} {self.user.username} - {self.lab.title}"
+    
+    def mark_complete(self, score=100):
+        """Mark lab as completed"""
+        self.is_completed = True
+        self.completed_at = timezone.now()
+        self.score = score
+        self.save()

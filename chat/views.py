@@ -9,7 +9,7 @@ from django.core.cache import cache
 from django.db.models import Prefetch, Count
 from django.views.decorators.cache import cache_page
 from django.core.paginator import Paginator
-from .models import Conversation, Message, ConversationStats, LearningModule, LearningVideo
+from .models import Conversation, Message, ConversationStats, LearningModule, LearningVideo, PracticeLab, LabCompletion
 from .services import AIService
 import json
 import logging
@@ -43,6 +43,16 @@ def module_detail(request, slug):
     """Generic module detail view using database data"""
     module = get_object_or_404(LearningModule, slug=slug, is_active=True)
     videos = module.videos.filter(is_active=True).order_by('order')
+    practice_labs = module.practice_labs.filter(is_active=True).order_by('order')
+    
+    # Get user's lab completions if authenticated
+    user_completions = {}
+    if request.user.is_authenticated:
+        completions = LabCompletion.objects.filter(
+            user=request.user,
+            lab__in=practice_labs
+        ).select_related('lab')
+        user_completions = {comp.lab.id: comp for comp in completions}
     
     # Create video titles JSON for JavaScript
     video_titles = {video.youtube_id: video.title for video in videos}
@@ -53,6 +63,8 @@ def module_detail(request, slug):
         'module_description': module.description,
         'module_icon': module.icon,
         'videos': videos,
+        'practice_labs': practice_labs,
+        'user_completions': user_completions,
         'video_titles_json': json.dumps(video_titles)
     }
     return render(request, 'learning/module_detail.html', context)
@@ -86,6 +98,89 @@ def digital_forensics_module(request):
 def advanced_security_module(request):
     """Advanced Security module - backwards compatibility"""
     return module_detail(request, 'advanced-security')
+
+
+@login_required
+def lab_detail(request, module_slug, lab_slug):
+    """Display practice lab details"""
+    module = get_object_or_404(LearningModule, slug=module_slug, is_active=True)
+    lab = get_object_or_404(PracticeLab, module=module, slug=lab_slug, is_active=True)
+    
+    # Get or create lab completion record
+    completion, created = LabCompletion.objects.get_or_create(
+        user=request.user,
+        lab=lab
+    )
+    
+    context = {
+        'module': module,
+        'lab': lab,
+        'completion': completion,
+    }
+    return render(request, 'learning/lab_detail.html', context)
+
+
+@login_required
+def lab_start(request, module_slug, lab_slug):
+    """Start a practice lab"""
+    module = get_object_or_404(LearningModule, slug=module_slug, is_active=True)
+    lab = get_object_or_404(PracticeLab, module=module, slug=lab_slug, is_active=True)
+    
+    # Get or create lab completion record
+    completion, created = LabCompletion.objects.get_or_create(
+        user=request.user,
+        lab=lab
+    )
+    
+    return redirect('chat:lab_detail', module_slug=module_slug, lab_slug=lab_slug)
+
+
+@login_required
+def lab_submit(request, module_slug, lab_slug):
+    """Submit lab completion or flag"""
+    if request.method == 'POST':
+        module = get_object_or_404(LearningModule, slug=module_slug, is_active=True)
+        lab = get_object_or_404(PracticeLab, module=module, slug=lab_slug, is_active=True)
+        
+        completion = get_object_or_404(LabCompletion, user=request.user, lab=lab)
+        
+        # Update submission details
+        completion.submission_notes = request.POST.get('notes', '')
+        completion.flag_submitted = request.POST.get('flag', '')
+        completion.attempts += 1
+        
+        # Check if marking as complete
+        if request.POST.get('mark_complete'):
+            score = int(request.POST.get('score', 100))
+            completion.mark_complete(score=score)
+            messages.success(request, f'🎉 Congratulations! Lab "{lab.title}" completed! You earned {lab.points} points.')
+        else:
+            completion.save()
+            messages.info(request, 'Lab progress saved.')
+        
+        return redirect('chat:lab_detail', module_slug=module_slug, lab_slug=lab_slug)
+    
+    return redirect('chat:module_detail', slug=module_slug)
+
+
+@login_required
+def lab_hint(request, module_slug, lab_slug):
+    """Reveal a hint for the lab"""
+    if request.method == 'POST':
+        module = get_object_or_404(LearningModule, slug=module_slug, is_active=True)
+        lab = get_object_or_404(PracticeLab, module=module, slug=lab_slug, is_active=True)
+        
+        completion = get_object_or_404(LabCompletion, user=request.user, lab=lab)
+        completion.hints_used += 1
+        completion.save()
+        
+        return JsonResponse({
+            'success': True,
+            'hints_used': completion.hints_used,
+            'hint': lab.hints
+        })
+    
+    return JsonResponse({'success': False}, status=400)
 
 
 @login_required
