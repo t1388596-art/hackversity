@@ -1,0 +1,7 @@
+# Create a simple SVG favicon as backup
+# This is a text-based SVG that will work as a favicon
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#1a1a2e"/>
+  <text x="50" y="65" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#00f5ff" text-anchor="middle">H</text>
+</svg>

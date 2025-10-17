@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lab.title }} - Practice Lab - Hackversity{% endblock %}
+
+{% block content %}
+<div class="lab-detail-container">
+    <!-- Lab Header -->
+    <section class="lab-header">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="{% url 'chat:learning_home' %}">Learning Hub</a> 
+                <span>/</span>
+                <a href="{% url 'chat:module_detail' module.slug %}">{{ module.title }}</a>
+                <span>/</span>
+                <span>{{ lab.title }}</span>
+            </nav>
+            
+            <div class="lab-title-section">
+                <h1><i class="fas fa-flask"></i> {{ lab.title }}</h1>
+                <div class="lab-badges">
+                    <span class="badge badge-{{ lab.difficulty_badge_color }}">
+                        {{ lab.get_difficulty_display }}
+                    </span>
+                    <span class="badge badge-secondary">
+                        <i class="fas fa-clock"></i> {{ lab.estimated_time_minutes }} min
+                    </span>
+                    <span class="badge badge-info">
+                        <i class="fas fa-tag"></i> {{ lab.get_lab_type_display }}
+                    </span>
+                    {% if lab.is_premium %}
+                    <span class="badge badge-warning">
+                        <i class="fas fa-crown"></i> Premium
+                    </span>
+                    {% endif %}
+                    <span class="badge badge-success">
+                        <i class="fas fa-star"></i> {{ lab.points }} Points
+                    </span>
+                </div>
+            </div>
+            
+            {% if completion.is_completed %}
+            <div class="completion-banner success">
+                <i class="fas fa-check-circle"></i>
+                <strong>Completed!</strong> You earned {{ lab.points }} points with a score of {{ completion.score }}%.
+                Completed on {{ completion.completed_at|date:"M d, Y" }}
+            </div>
+            {% else %}
+            <div class="completion-banner info">
+                <i class="fas fa-play-circle"></i>
+                {% if completion.attempts > 0 %}
+                    <strong>In Progress</strong> - Attempt #{{ completion.attempts }}
+                {% else %}
+                    <strong>Not Started</strong> - Ready to begin this lab?
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Lab Content -->
+    <section class="lab-content">
+        <div class="container">
+            <div class="row">
+                <!-- Main Content -->
+                <div class="col-md-8">
+                    <!-- Description -->
+                    <div class="lab-card">
+                        <h2><i class="fas fa-info-circle"></i> Description</h2>
+                        <p>{{ lab.description }}</p>
+                    </div>
+
+                    <!-- Learning Objectives -->
+                    <div class="lab-card">
+                        <h2><i class="fas fa-bullseye"></i> Learning Objectives</h2>
+                        <ul class="objectives-list">
+                            {% for objective in lab.objectives_list %}
+                            <li>{{ objective }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="lab-card">
+                        <h2><i class="fas fa-list-ol"></i> Instructions</h2>
+                        <div class="instructions-content">
+                            {{ lab.instructions|linebreaks }}
+                        </div>
+                    </div>
+
+                    <!-- External Lab Link -->
+                    {% if lab.external_url %}
+                    <div class="lab-card external-lab">
+                        <h2><i class="fas fa-external-link-alt"></i> External Lab Environment</h2>
+                        <p>This lab uses an external platform for hands-on practice.</p>
+                        <a href="{{ lab.external_url }}" target="_blank" class="btn btn-primary btn-lg">
+                            <i class="fas fa-rocket"></i> Launch Lab Environment
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Submission Form -->
+                    {% if not completion.is_completed %}
+                    <div class="lab-card submission-card">
+                        <h2><i class="fas fa-paper-plane"></i> Submit Your Work</h2>
+                        <form method="post" action="{% url 'chat:lab_submit' module.slug lab.slug %}">
+                            {% csrf_token %}
+                            
+                            {% if lab.lab_type == 'ctf' %}
+                            <div class="form-group">
+                                <label for="flag">Flag</label>
+                                <input type="text" 
+                                       name="flag" 
+                                       id="flag" 
+                                       class="form-control" 
+                                       placeholder="flag{...}"
+                                       value="{{ completion.flag_submitted }}">
+                                <small class="form-text text-muted">Enter the CTF flag you discovered</small>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="form-group">
+                                <label for="notes">Notes / Solution</label>
+                                <textarea name="notes" 
+                                          id="notes" 
+                                          rows="5" 
+                                          class="form-control"
+                                          placeholder="Document your approach, tools used, and findings...">{{ completion.submission_notes }}</textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="score">Self-Assessment Score (0-100)</label>
+                                <input type="number" 
+                                       name="score" 
+                                       id="score" 
+                                       class="form-control" 
+                                       min="0" 
+                                       max="100" 
+                                       value="100">
+                            </div>
+                            
+                            <div class="btn-group-submit">
+                                <button type="submit" name="mark_complete" value="1" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Submit & Mark Complete
+                                </button>
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="fas fa-save"></i> Save Progress
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    {% endif %}
+
+                    <!-- Solution (only show if completed) -->
+                    {% if completion.is_completed and lab.solution %}
+                    <div class="lab-card solution-card">
+                        <h2><i class="fas fa-lightbulb"></i> Official Solution</h2>
+                        <div class="solution-content">
+                            {{ lab.solution|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-md-4">
+                    <!-- Progress Card -->
+                    <div class="lab-sidebar-card progress-card">
+                        <h3>Your Progress</h3>
+                        <div class="progress-stats">
+                            <div class="stat">
+                                <span class="label">Status:</span>
+                                <span class="value">
+                                    {% if completion.is_completed %}
+                                    <span class="text-success">✓ Completed</span>
+                                    {% else %}
+                                    <span class="text-warning">⧖ In Progress</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">Attempts:</span>
+                                <span class="value">{{ completion.attempts }}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">Hints Used:</span>
+                                <span class="value">{{ completion.hints_used }}</span>
+                            </div>
+                            {% if completion.is_completed %}
+                            <div class="stat">
+                                <span class="label">Score:</span>
+                                <span class="value">{{ completion.score }}%</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Tools Required -->
+                    {% if lab.tools_list %}
+                    <div class="lab-sidebar-card tools-card">
+                        <h3><i class="fas fa-tools"></i> Required Tools</h3>
+                        <ul class="tools-list">
+                            {% for tool in lab.tools_list %}
+                            <li>{{ tool }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Hints -->
+                    {% if lab.hints and not completion.is_completed %}
+                    <div class="lab-sidebar-card hints-card">
+                        <h3><i class="fas fa-question-circle"></i> Need Help?</h3>
+                        <p>Stuck? View a hint to get back on track.</p>
+                        <button class="btn btn-outline btn-block" id="showHintBtn">
+                            <i class="fas fa-eye"></i> Show Hint
+                        </button>
+                        <div id="hintContent" style="display: none;" class="hint-content mt-3">
+                            {{ lab.hints|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="lab-sidebar-card actions-card">
+                        {% if not completion.is_completed %}
+                        <a href="{% url 'chat:lab_start' module.slug lab.slug %}" class="btn btn-primary btn-block">
+                            <i class="fas fa-play"></i> 
+                            {% if completion.attempts > 0 %}Continue Lab{% else %}Start Lab{% endif %}
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'chat:module_detail' module.slug %}" class="btn btn-outline btn-block">
+                            <i class="fas fa-arrow-left"></i> Back to Module
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+.lab-detail-container {
+    min-height: 100vh;
+    background: #1a0f0f;
+    color: #e0e0e0;
+    padding-top: 80px;
+}
+
+.lab-header {
+    background: linear-gradient(135deg, #2e1a1a 0%, #3e1616 50%, #601010 100%);
+    padding: 40px 20px;
+    border-bottom: 3px solid #ff5555;
+}
+
+.breadcrumb {
+    color: #b0b0b0;
+    margin-bottom: 20px;
+}
+
+.breadcrumb a {
+    color: #ff5555;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb span {
+    margin: 0 10px;
+}
+
+.lab-title-section h1 {
+    color: #ff5555;
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+.lab-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.badge {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.badge-success { background: #28a745; color: white; }
+.badge-warning { background: #ffc107; color: #000; }
+.badge-danger { background: #dc3545; color: white; }
+.badge-info { background: #17a2b8; color: white; }
+.badge-secondary { background: #6c757d; color: white; }
+.badge-dark { background: #343a40; color: white; }
+
+.completion-banner {
+    margin-top: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.completion-banner.success {
+    background: rgba(40, 167, 69, 0.2);
+    border: 2px solid #28a745;
+    color: #28a745;
+}
+
+.completion-banner.info {
+    background: rgba(23, 162, 184, 0.2);
+    border: 2px solid #17a2b8;
+    color: #17a2b8;
+}
+
+.lab-content {
+    padding: 40px 20px;
+}
+
+.lab-card {
+    background: #230f0f;
+    border: 1px solid #3e1616;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.lab-card h2 {
+    color: #ff5555;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.objectives-list {
+    list-style: none;
+    padding: 0;
+}
+
+.objectives-list li {
+    padding: 10px 0;
+    padding-left: 30px;
+    position: relative;
+}
+
+.objectives-list li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #28a745;
+    font-weight: bold;
+}
+
+.instructions-content {
+    line-height: 1.8;
+}
+
+.external-lab {
+    text-align: center;
+    background: rgba(255, 85, 85, 0.1);
+    border-color: #ff5555;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #ff5555;
+    font-weight: 600;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    background: #1a0f0f;
+    border: 1px solid #3e1616;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #ff5555;
+}
+
+.btn-group-submit {
+    display: flex;
+    gap: 15px;
+}
+
+.btn {
+    padding: 12px 30px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-primary {
+    background: #ff5555;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #ff3333;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #ff5555;
+    color: #ff5555;
+}
+
+.btn-outline:hover {
+    background: #ff5555;
+    color: white;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.lab-sidebar-card {
+    background: #230f0f;
+    border: 1px solid #3e1616;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.lab-sidebar-card h3 {
+    color: #ff5555;
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+}
+
+.progress-stats .stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #3e1616;
+}
+
+.progress-stats .stat:last-child {
+    border-bottom: none;
+}
+
+.progress-stats .label {
+    color: #b0b0b0;
+}
+
+.progress-stats .value {
+    font-weight: 600;
+}
+
+.tools-list {
+    list-style: none;
+    padding: 0;
+}
+
+.tools-list li {
+    padding: 8px 0;
+    padding-left: 25px;
+    position: relative;
+}
+
+.tools-list li:before {
+    content: "⚙";
+    position: absolute;
+    left: 0;
+    color: #ff5555;
+}
+
+.hint-content {
+    background: rgba(255, 193, 7, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+}
+
+@media (max-width: 768px) {
+    .lab-title-section h1 {
+        font-size: 1.8rem;
+    }
+    
+    .btn-group-submit {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+document.getElementById('showHintBtn')?.addEventListener('click', function() {
+    const hintContent = document.getElementById('hintContent');
+    const btn = this;
+    
+    if (hintContent.style.display === 'none') {
+        // Send request to track hint usage
+        fetch('{% url "chat:lab_hint" module.slug lab.slug %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        hintContent.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Hint';
+    } else {
+        hintContent.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-eye"></i> Show Hint';
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,744 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block title %}{{ module_title }} - Hackversity Learning{% endblock %}
+
+{% block content %}
+<div class="module-detail-container">
+    <!-- Module Header -->
+    <section class="module-header">
+        <div class="container">
+            <a href="/chat/learning/" class="back-button">
+                <i class="fas fa-arrow-left"></i> Back to Learning Hub
+            </a>
+            <div class="module-info">
+                <div class="module-icon-large">
+                    <i class="{{ module_icon }}"></i>
+                </div>
+                <h1 class="module-title">{{ module_title }}</h1>
+                <p class="module-description">{{ module_description }}</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Module Content -->
+    <section class="module-content">
+        <div class="container">
+            <div class="content-grid">
+                <!-- Course Outline -->
+                <div class="course-outline">
+                    <h2>Course Outline</h2>
+                    <div class="lesson-list">
+                        {% for video in videos %}
+                            <div class="lesson-item" onclick="playVideo('{{ video.youtube_id }}')">
+                                <i class="fas fa-play-circle"></i>
+                                <span>{{ video.title }}</span>
+                                <span class="duration">{{ video.duration_minutes }} min</span>
+                            </div>
+                        {% empty %}
+                            <div class="lesson-item no-videos">
+                                <i class="fas fa-info-circle"></i>
+                                <span>No videos available yet. Admin can add videos from the Django admin panel.</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Right Column: Video Player and Actions -->
+                <div class="right-column">
+                    <!-- Video Player Section -->
+                    <div class="video-player-section" id="videoPlayerSection">
+                        <div class="video-container">
+                            <div class="video-header">
+                                <h3 id="currentVideoTitle">Click a lesson to start watching</h3>
+                                <button class="close-video-btn" onclick="closeVideo()" id="closeVideoBtn" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="video-embed">
+                                <div id="videoPlaceholder" class="video-placeholder">
+                                    <div class="placeholder-content">
+                                        <i class="fas fa-play-circle" style="font-size: 4rem; color: #ff5555; margin-bottom: 20px;"></i>
+                                        <h4 style="color: #ff5555; margin-bottom: 10px;">Ready to Learn?</h4>
+                                        <p style="color: #b0b0b0;">Click any lesson from the Course Outline to start watching</p>
+                                    </div>
+                                </div>
+                                <iframe id="youtubePlayer" 
+                                        width="100%" 
+                                        height="450" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen
+                                        style="display: none;">
+                                </iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Module Actions -->
+                  
+                    
+                    
+                    
+                   
+                   
+                </div>
+                </div>
+            </div>
+            
+            <!-- Practice Labs Section -->
+            {% if practice_labs %}
+            <div class="practice-labs-section" id="practiceLabsSection">
+                <h2><i class="fas fa-flask"></i> Practice Labs</h2>
+                <p class="section-description">Apply what you've learned with hands-on exercises</p>
+                
+                <div class="labs-grid">
+                    {% for lab in practice_labs %}
+                    <div class="lab-card">
+                        <div class="lab-header">
+                            <h3>{{ lab.title }}</h3>
+                            <div class="lab-badges">
+                                <span class="badge badge-{{ lab.difficulty_badge_color }}">
+                                    {{ lab.get_difficulty_display }}
+                                </span>
+                                <span class="badge badge-secondary">
+                                    <i class="fas fa-clock"></i> {{ lab.estimated_time_minutes }} min
+                                </span>
+                                <span class="badge badge-success">
+                                    <i class="fas fa-star"></i> {{ lab.points }} pts
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <p class="lab-description">{{ lab.description|truncatewords:30 }}</p>
+                        
+                        <div class="lab-meta">
+                            <span class="lab-type">
+                                <i class="fas fa-tag"></i> {{ lab.get_lab_type_display }}
+                            </span>
+                            {% if user.is_authenticated and lab.id in user_completions %}
+                                {% with completion=user_completions|lookup:lab.id %}
+                                    {% if completion.is_completed %}
+                                    <span class="lab-status completed">
+                                        <i class="fas fa-check-circle"></i> Completed
+                                    </span>
+                                    {% else %}
+                                    <span class="lab-status in-progress">
+                                        <i class="fas fa-spinner"></i> In Progress
+                                    </span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                        
+                        <a href="{% url 'chat:lab_detail' module.slug lab.slug %}" class="btn btn-primary btn-block">
+                            {% with completion=user_completions|lookup:lab.id %}
+                                {% if completion and completion.is_completed %}
+                                    <i class="fas fa-eye"></i> Review Lab
+                                {% elif completion %}
+                                    <i class="fas fa-play"></i> Continue Lab
+                                {% else %}
+                                    <i class="fas fa-rocket"></i> Start Lab
+                                {% endif %}
+                            {% endwith %}
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+<style>
+/* Existing styles... */
+
+.practice-labs-section {
+    margin-top: 60px;
+    padding-top: 60px;
+    border-top: 2px solid #3e1616;
+}
+
+.practice-labs-section h2 {
+    font-size: 2.5rem;
+    color: #ff5555;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.section-description {
+    color: #b0b0b0;
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+}
+
+.labs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 30px;
+}
+
+.lab-card {
+    background: #230f0f;
+    border: 1px solid #3e1616;
+    border-radius: 12px;
+    padding: 25px;
+    transition: all 0.3s ease;
+}
+
+.lab-card:hover {
+    transform: translateY(-5px);
+    border-color: #ff5555;
+    box-shadow: 0 10px 30px rgba(255, 85, 85, 0.2);
+}
+
+.lab-header h3 {
+    color: #ff5555;
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+}
+
+.lab-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.lab-description {
+    color: #e0e0e0;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.lab-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #3e1616;
+}
+
+.lab-type {
+    color: #b0b0b0;
+    font-size: 0.9rem;
+}
+
+.lab-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.lab-status.completed {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.lab-status.in-progress {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.labs-count {
+    color: #b0b0b0;
+    margin: 10px 0;
+}
+
+.module-detail-container {
+    min-height: 100vh;
+    background: #0f0f23;
+    color: white;
+}
+
+.module-header {
+    background: linear-gradient(135deg, #2e1a1a 0%, #3e1616 50%, #601010 100%);
+    padding: 40px 20px 60px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #ff5555;
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 30px;
+    transition: color 0.3s ease;
+}
+
+.back-button:hover {
+    color: #ff8080;
+}
+
+.module-info {
+    text-align: center;
+}
+
+.module-icon-large {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(45deg, #ff5555, #ff8080);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 30px;
+}
+
+.module-icon-large i {
+    font-size: 3rem;
+    color: white;
+}
+
+.module-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.module-description {
+    font-size: 1.3rem;
+    color: #b0b0b0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.module-content {
+    padding: 80px 20px;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 600px;
+    gap: 40px;
+    align-items: start;
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.video-player-section {
+    position: sticky;
+    top: 20px;
+    margin-bottom: 20px;
+}
+
+.video-container {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.video-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.video-header h3 {
+    color: #ff5555;
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.close-video-btn {
+    background: rgba(255, 85, 85, 0.2);
+    border: 1px solid #ff5555;
+    color: #ff5555;
+    padding: 10px 15px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.close-video-btn:hover {
+    background: #ff5555;
+    color: white;
+}
+
+.video-embed {
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+}
+
+.video-embed iframe {
+    border-radius: 10px;
+    height: 450px !important;
+    min-height: 450px;
+}
+
+.video-placeholder {
+    height: 450px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #2d1b1b 50%, #3d1616 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.placeholder-content {
+    text-align: center;
+    padding: 40px;
+}
+
+.course-outline h2 {
+    color: #ff5555;
+    font-size: 2rem;
+    margin-bottom: 30px;
+    font-weight: 700;
+}
+
+.lesson-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.lesson-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    cursor: pointer !important;
+    user-select: none;
+    position: relative;
+    z-index: 1;
+}
+
+.lesson-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #ff5555;
+    transform: translateX(10px);
+    box-shadow: 0 5px 15px rgba(255, 85, 85, 0.2);
+}
+
+.lesson-item:active {
+    transform: translateX(5px) scale(0.98);
+    background: rgba(255, 85, 85, 0.1);
+}
+
+/* Make sure all child elements don't interfere with clicks */
+.lesson-item * {
+    pointer-events: none;
+}
+
+.lesson-item.no-videos {
+    cursor: default;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.lesson-item.no-videos:hover {
+    transform: none;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.lesson-item i {
+    color: #ff5555;
+    font-size: 1.2rem;
+}
+
+.lesson-item span:first-of-type {
+    flex: 1;
+    font-weight: 500;
+}
+
+.duration {
+    color: #b0b0b0;
+    font-size: 0.9rem;
+}
+
+.module-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.action-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.action-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-5px);
+}
+
+.action-card h3 {
+    color: #ff5555;
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.action-card p {
+    color: #b0b0b0;
+    margin-bottom: 25px;
+    line-height: 1.6;
+}
+
+.btn {
+    padding: 15px 30px;
+    border-radius: 25px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 2px solid;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    background: none;
+    font-size: 1rem;
+}
+
+.btn-large {
+    padding: 18px 35px;
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #ff5555, #ff8080);
+    color: #ffffff;
+    border-color: #ff5555;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(255, 85, 85, 0.3);
+}
+
+.btn-secondary {
+    background: linear-gradient(45deg, #555555, #808080);
+    color: #ffffff;
+    border-color: #555555;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(85, 85, 85, 0.3);
+}
+
+.btn-outline {
+    background: transparent;
+    color: #ff5555;
+    border-color: #ff5555;
+}
+
+.btn-outline:hover {
+    background: #ff5555;
+    color: #2e1a1a;
+    transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr 500px;
+        gap: 30px;
+    }
+    
+    .video-container {
+        max-width: 500px;
+    }
+    
+    .video-embed iframe {
+        height: 400px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    
+    .module-title {
+        font-size: 2.5rem;
+    }
+    
+    .right-column {
+        order: -1;
+    }
+    
+    .video-player-section {
+        position: relative;
+        top: auto;
+    }
+    
+    .video-container {
+        padding: 20px;
+        max-width: 100%;
+    }
+    
+    .video-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .video-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .video-embed iframe {
+        height: 320px !important;
+    }
+}
+</style>
+
+<script>
+console.log('🚀 Module detail JavaScript loaded');
+
+// Test if JavaScript is working
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📋 DOM loaded, setting up video functionality');
+    
+    // Add click listeners to all lesson items as backup
+    const lessonItems = document.querySelectorAll('.lesson-item[onclick]');
+    console.log('🎯 Found', lessonItems.length, 'lesson items');
+    
+    lessonItems.forEach((item, index) => {
+        console.log('📝 Setting up lesson item', index + 1);
+        item.style.cursor = 'pointer';
+        
+        // Add additional click listener as backup
+        item.addEventListener('click', function(e) {
+            console.log('🖱️ Lesson item clicked via event listener');
+            const onclick = this.getAttribute('onclick');
+            if (onclick) {
+                console.log('⚡ Executing onclick:', onclick);
+                eval(onclick);
+            }
+        });
+    });
+});
+
+                // Dynamic video titles from database
+                const videoTitles = JSON.parse('{{ video_titles_json|escapejs }}');function playVideo(videoId) {
+    console.log('🎥 Playing video:', videoId);
+    
+    const videoSection = document.getElementById('videoPlayerSection');
+    const youtubePlayer = document.getElementById('youtubePlayer');
+    const videoTitle = document.getElementById('currentVideoTitle');
+    
+    console.log('🔍 Video elements:', {
+        videoSection: !!videoSection,
+        youtubePlayer: !!youtubePlayer,
+        videoTitle: !!videoTitle
+    });
+    
+    if (!videoSection || !youtubePlayer || !videoTitle) {
+        console.error('❌ Video player elements not found');
+        return;
+    }
+    
+    // Set video title
+    videoTitle.textContent = videoTitles[videoId] || 'Cybersecurity Lesson';
+    
+    // Hide placeholder and show video
+    const placeholder = document.getElementById('videoPlaceholder');
+    const closeBtn = document.getElementById('closeVideoBtn');
+    
+    if (placeholder) placeholder.style.display = 'none';
+    if (closeBtn) closeBtn.style.display = 'block';
+    
+    // Set YouTube embed URL with proper parameters
+    youtubePlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1`;
+    youtubePlayer.style.display = 'block';
+    
+    // Show video player
+    videoSection.style.display = 'block';
+    
+    // Scroll to video player smoothly
+    setTimeout(() => {
+        videoSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+        });
+    }, 100);
+    
+    console.log('✅ Video player should now be visible');
+}
+
+function closeVideo() {
+    const videoSection = document.getElementById('videoPlayerSection');
+    const youtubePlayer = document.getElementById('youtubePlayer');
+    const placeholder = document.getElementById('videoPlaceholder');
+    const closeBtn = document.getElementById('closeVideoBtn');
+    const videoTitle = document.getElementById('currentVideoTitle');
+    
+    // Stop video by clearing src
+    youtubePlayer.src = '';
+    youtubePlayer.style.display = 'none';
+    
+    // Show placeholder and reset title
+    if (placeholder) placeholder.style.display = 'flex';
+    if (closeBtn) closeBtn.style.display = 'none';
+    if (videoTitle) videoTitle.textContent = 'Click a lesson to start watching';
+}
+
+function startInteractiveLearning() {
+    const moduleTitle = "{{ module_title }}";
+    const query = `I want to start learning about ${moduleTitle}. Can you provide me with a structured learning path and guide me through the key concepts?`;
+    window.location.href = '/chat/?q=' + encodeURIComponent(query);
+}
+
+function scrollToLabs() {
+    const labsSection = document.getElementById('practiceLabsSection');
+    if (labsSection) {
+        labsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        // Fallback if labs section doesn't exist
+        openPracticeLabs();
+    }
+}
+
+function openPracticeLabs() {
+    const moduleTitle = "{{ module_title }}";
+    const query = `I'm looking for hands-on practice exercises and labs for ${moduleTitle}. Can you provide me with practical scenarios and challenges?`;
+    window.location.href = '/chat/?q=' + encodeURIComponent(query);
+}
+
+function chatWithTutor() {
+    const moduleTitle = "{{ module_title }}";
+    const query = `I have questions about ${moduleTitle}. Can you help me understand the concepts better?`;
+    window.location.href = '/chat/?q=' + encodeURIComponent(query);
+}
+</script>
+{% endblock %}
