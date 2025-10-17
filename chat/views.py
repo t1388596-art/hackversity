@@ -25,6 +25,7 @@ def landing_page(request):
     return render(request, 'chat/home.html', context)
 
 
+@login_required
 def learning_home(request):
     """Learning page with modules from database"""
     modules = LearningModule.objects.filter(is_active=True).prefetch_related('videos')
@@ -34,11 +35,13 @@ def learning_home(request):
     return render(request, 'learning/home.html', context)
 
 
+@login_required
 def python_tutorial(request):
     """Python tutorial page with structured learning modules"""
     return render(request, 'learning/python_tutorial.html')
 
 
+@login_required
 def module_detail(request, slug):
     """Generic module detail view using database data"""
     module = get_object_or_404(LearningModule, slug=slug, is_active=True)
@@ -70,31 +73,37 @@ def module_detail(request, slug):
     return render(request, 'learning/module_detail.html', context)
 
 
+@login_required
 def getting_started_module(request):
     """Getting Started cybersecurity module - backwards compatibility"""
     return module_detail(request, 'getting-started')
 
 
+@login_required
 def network_security_module(request):
     """Network Security module - backwards compatibility"""
     return module_detail(request, 'network-security')
 
 
+@login_required
 def web_security_module(request):
     """Web Application Security module - backwards compatibility"""
     return module_detail(request, 'web-security')
 
 
+@login_required
 def bug_bounty_module(request):
     """Bug Bounty Hunting module - backwards compatibility"""
     return module_detail(request, 'bug-bounty')
 
 
+@login_required
 def digital_forensics_module(request):
     """Digital Forensics module - backwards compatibility"""
     return module_detail(request, 'digital-forensics')
 
 
+@login_required
 def advanced_security_module(request):
     """Advanced Security module - backwards compatibility"""
     return module_detail(request, 'advanced-security')

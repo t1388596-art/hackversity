@@ -23,7 +23,8 @@ def custom_login_view(request):
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
             if user is not None:
-                login(request, user)
+                # Specify the backend when logging in the user
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                 return redirect('/chat/')
         error_message = "Invalid username or password"
     else:
@@ -262,7 +263,8 @@ def custom_signup_view(request):
         if form.is_valid():
             try:
                 user = form.save()
-                login(request, user)
+                # Specify the backend when logging in the user
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                 return redirect('/chat/')
             except Exception as e:
                 form.add_error(None, f"Registration failed: {str(e)}")
@@ -396,7 +398,8 @@ class SignUpView(CreateView):
     
     def form_valid(self, form):
         response = super().form_valid(form)
-        login(self.request, self.object)
+        # Specify the backend when logging in the user
+        login(self.request, self.object, backend='django.contrib.auth.backends.ModelBackend')
         # Notification removed per user request
         return response
 

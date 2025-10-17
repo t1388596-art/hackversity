@@ -139,7 +139,8 @@ def emergency_login(request):
         if username and password:
             user = authenticate(request, username=username, password=password)
             if user is not None:
-                login(request, user)
+                # Specify the backend when logging in the user
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                 return redirect('/chat/')
             else:
                 error_message = "Invalid username or password"
@@ -293,7 +294,8 @@ def emergency_login(request):
         if username and password:
             user = authenticate(username=username, password=password)
             if user:
-                login(request, user)
+                # Specify the backend when logging in the user
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                 return JsonResponse({'success': True, 'message': 'Login successful'})
             else:
                 return JsonResponse({'success': False, 'message': 'Invalid credentials'})
