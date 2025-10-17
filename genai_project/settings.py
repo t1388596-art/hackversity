@@ -27,7 +27,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'testserver',
-    '13.235.18.77'
+    'hackversity.com'
 ]
 
 
@@ -92,10 +92,10 @@ WSGI_APPLICATION = 'genai_project.wsgi.application'
 DATABASES={
     'default':{
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME':'backendcourse',
-        'USER': 'mysuperuser',
-        'PASSWORD': 'Mysuperuser',
-        'HOST':'backendcourse.chms44cg0zaf.ap-south-1.rds.amazonaws.com',
+        'NAME':'hackversity',
+        'USER': 'hackversity',
+        'PASSWORD': 'Manifest@dreams',
+        'HOST':'hackversity.c5a0a206gyim.ap-south-1.rds.amazonaws.com',
         'PORT':'5432'
     }
 }
